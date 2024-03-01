@@ -69,6 +69,17 @@ class Program
     static bool firsttime = true;
     static ConcurrentQueue<string> _lineQueue = new ConcurrentQueue<string>();
 
+    static void SaveBitmapToFile(Bitmap bitmap, string filePath)
+    {
+        bitmap.Save(filePath, ImageFormat.Png); // Save as PNG format
+
+
+
+
+
+    }
+
+
     public static int RateOfChange(int[] Values)
     {
         if (Values.Length < 10)
@@ -143,7 +154,9 @@ class Program
         {
             returnvalue = -1;
         }
-
+        // Debug Section
+        //string filePath = @$"C:\EQItems\{x1}_{y1}.jpg"; // Path to save the file
+        //SaveBitmapToFile(screenCapture, filePath);
 
 
 
@@ -193,6 +206,7 @@ class Program
         public int TargetOfTarget { get; set; }
         public int MyLevel { get; set; }
         public int Sitting { get; set;}
+
 
 
 
@@ -309,21 +323,21 @@ class Program
         bool AutoSit = false;
         bool Auction = false;
 
-        List<int> Target1 = new List<int> { 1387, 384, 1413, 396 };
-        List<int> HpStaMp = new List<int> { 1638, 406, 1676, 471 };
-        List<int> Party1 = new List<int> { 1638, 482, 1669, 496 };
-        List<int> Party2 = new List<int> { 1638, 513, 1669, 527 };
-        List<int> Party3 = new List<int> { 1638, 544, 1669, 560 };
-        List<int> Party4 = new List<int> { 1638, 570, 1669, 591 };
-        List<int> Party5 = new List<int> { 1638, 609, 1669, 623 };
-        List<int> TargetOfTarget = new List<int> { 1503, 375, 1527, 388 };
-        List<int> MyLevel = new List<int> { 1534, 641, 1553, 654 };  // does not get level 1
-        List<int> TargetBox1 = new List<int> { 1429, 509, 1454, 524 };
-        List<int> TargetBox2 = new List<int> { 1429, 544, 1454, 559 };
-        List<int> TargetBox3 = new List<int> { 1429, 579, 1454, 594 };
-        List<int> TargetBox4 = new List<int> { 1429, 614, 1454, 629 };
-        List<int> TargetBox5 = new List<int> { 1429, 647, 1454, 662 };
-        List<int> TargetBox6 = new List<int> { 1429, 680, 1454, 695 };
+        List<int> Target1 = new List<int> { 1387, 386, 1413, 398 };
+        List<int> HpStaMp = new List<int> { 1638, 408, 1676, 473 };
+        List<int> Party1 = new List<int> { 1638, 483, 1669, 500 };
+        List<int> Party2 = new List<int> { 1638, 515, 1669, 529 };
+        List<int> Party3 = new List<int> { 1638, 546, 1669, 562 };
+        List<int> Party4 = new List<int> { 1638, 572, 1669, 593 };
+        List<int> Party5 = new List<int> { 1638, 611, 1669, 625 };
+        List<int> TargetOfTarget = new List<int> { 1503, 377, 1527, 390 };
+        List<int> MyLevel = new List<int> { 1534, 642, 1553, 655 };  // does not get level 1
+        List<int> TargetBox1 = new List<int> { 1429, 511, 1454, 526 };
+        List<int> TargetBox2 = new List<int> { 1429, 546, 1454, 561 };
+        List<int> TargetBox3 = new List<int> { 1429, 581, 1454, 598 };
+        List<int> TargetBox4 = new List<int> { 1429, 616, 1454, 633 };
+        List<int> TargetBox5 = new List<int> { 1429, 649, 1454, 666 };
+        List<int> TargetBox6 = new List<int> { 1429, 682, 1454, 697 };
 
         Random random = new Random();
         string filePath2 = @"C:\temp\EQTestFiles\Data.csv";
@@ -350,7 +364,99 @@ class Program
         bool OutOfRange = false;
         bool ManaRegen = false;
         bool backup = false;
-        Int64 counter = 0;
+        
+
+        Thread Read1 = new Thread(() =>
+        {
+            while (!stopPrinting)
+            {
+                EQStats.Target_HP = CaptureScreenLocation(Target1[0], Target1[1], Target1[2], Target1[3]);
+                EQStats.Target_HP1 = CaptureScreenLocation(TargetBox1[0], TargetBox1[1], TargetBox1[2], TargetBox1[3]);
+                EQStats.Target_HP2 = CaptureScreenLocation(TargetBox2[0], TargetBox2[1], TargetBox2[2], TargetBox2[3]);
+                EQStats.Target_HP3 = CaptureScreenLocation(TargetBox3[0], TargetBox3[1], TargetBox3[2], TargetBox3[3]);
+                EQStats.Target_HP4 = CaptureScreenLocation(TargetBox4[0], TargetBox4[1], TargetBox4[2], TargetBox4[3]);
+                EQStats.Target_HP5 = CaptureScreenLocation(TargetBox5[0], TargetBox5[1], TargetBox5[2], TargetBox5[3]);
+                EQStats.Target_HP6 = CaptureScreenLocation(TargetBox6[0], TargetBox6[1], TargetBox6[2], TargetBox6[3]);
+
+
+                Thread.Sleep(500);
+            }
+        } );
+
+        Thread Read2 = new Thread(() =>
+        {
+            while (!stopPrinting)
+            {
+                EQStats.Party1 = CaptureScreenLocation(Party1[0], Party1[1], Party1[2], Party1[3]);
+                EQStats.Party2 = CaptureScreenLocation(Party2[0], Party2[1], Party2[2], Party2[3]);
+                EQStats.Party3 = CaptureScreenLocation(Party3[0], Party3[1], Party3[2], Party3[3]);
+                EQStats.Party4 = CaptureScreenLocation(Party4[0], Party4[1], Party4[2], Party4[3]);
+                EQStats.Party5 = CaptureScreenLocation(Party5[0], Party5[1], Party5[2], Party5[3]);
+
+
+                Thread.Sleep(500);
+            }
+        });
+        
+        
+        Thread Read3 = new Thread(() =>
+        {
+            while (!stopPrinting)
+            {
+                int x1 = HpStaMp[0]; // x-coordinate of top-left corner
+                int y1 = HpStaMp[1]; // y-coordinate of top-left corner
+                int x2 = HpStaMp[2]; // x-coordinate of bottom-right corner
+                int y2 = HpStaMp[3]; // y-coordinate of bottom-right corner
+
+                // Calculate width and height of the rectangle
+                int width = Math.Abs(x2 - x1);
+                int height = Math.Abs(y2 - y1);
+
+                Bitmap screenCapture = CaptureScreenRegion(x1, y1, width, height);
+                Image<Bgr, byte> emguImage = screenCapture.ToImage<Bgr, byte>();
+                string recognizedText = PerformOCR(emguImage);
+                recognizedText = recognizedText.Replace("%", "");
+
+
+                string[] subregconizedtext = recognizedText.Split(Environment.NewLine);
+                try
+                {
+                    if (subregconizedtext[0].Contains("100"))
+                    {
+                        subregconizedtext[0] = "100";
+                    }
+                    else
+                    {
+                        subregconizedtext[0] = subregconizedtext[0].Substring(0, 2);
+                    }
+                    if (subregconizedtext[2].Contains("100"))
+                    {
+                        subregconizedtext[2] = "100";
+                    }
+                    else
+                    {
+                        subregconizedtext[2] = subregconizedtext[2].Substring(0, 2);
+                    }
+
+
+                    EQStats.My_HP = int.Parse(subregconizedtext[0]);
+                    EQStats.My_MP = int.Parse(subregconizedtext[2]);
+
+
+
+                }
+                catch
+                {
+                    EQStats.My_HP = -1;
+                    EQStats.My_MP = -1;
+                }
+                Thread.Sleep(500);
+            }
+        });
+        
+
+
+
 
 
         Thread printThread = new Thread(() =>
@@ -390,96 +496,8 @@ class Program
                 }
                 // Get my stats More Complex, cant use the simplified system
 
-                int x1 = HpStaMp[0]; // x-coordinate of top-left corner
-            int y1 = HpStaMp[1]; // y-coordinate of top-left corner
-            int x2 = HpStaMp[2]; // x-coordinate of bottom-right corner
-            int y2 = HpStaMp[3]; // y-coordinate of bottom-right corner
-
-            // Calculate width and height of the rectangle
-            int width = Math.Abs(x2 - x1);
-            int height = Math.Abs(y2 - y1);
-
-            Bitmap screenCapture = CaptureScreenRegion(x1, y1, width, height);
-            Image<Bgr, byte> emguImage = screenCapture.ToImage<Bgr, byte>();
-            string recognizedText = PerformOCR(emguImage);
-            recognizedText = recognizedText.Replace("%", "");
             
-
-            string[] subregconizedtext = recognizedText.Split(Environment.NewLine);
-            try
-            {
-                if (subregconizedtext[0].Contains("100"))
-                {
-                    subregconizedtext[0] = "100";
-                }
-                else
-                {
-                    subregconizedtext[0] = subregconizedtext[0].Substring(0, 2);
-                }
-                if (subregconizedtext[2].Contains("100"))
-                {
-                    subregconizedtext[2] = "100";
-                }
-                else
-                {
-                    subregconizedtext[2] = subregconizedtext[2].Substring(0, 2);
-                }
-
-
-                EQStats.My_HP = int.Parse(subregconizedtext[0]);
-                EQStats.My_MP = int.Parse(subregconizedtext[2]);
-                
-                
-
-            } catch {
-                EQStats.My_HP = -1;
-                EQStats.My_MP = -1;
-            }
-            // Add Check to stop casting here  --  Might be able to get current target
-            //if (EQStats.Casting == 1)  // Check to see if currently casting, if so do nothing
-            //{
-            //    Thread.Sleep(500);
-            //    continue;
-            //}
-
-            //x1 = Target1[0]; // x-coordinate of top-left corner
-            //y1 = Target1[1]; // y-coordinate of top-left corner
-            //x2 = Target1[2]; // x-coordinate of bottom-right corner
-            //y2 = Target1[3]; // y-coordinate of bottom-right corner
-
-            //// Calculate width and height of the rectangle
-            //width = Math.Abs(x2 - x1);
-            //height = Math.Abs(y2 - y1);
-
-            //screenCapture = CaptureScreenRegion(x1, y1, width, height);
-            //emguImage = screenCapture.ToImage<Bgr, byte>();
-            //recognizedText = PerformOCR(emguImage);
-            //recognizedText = recognizedText.Replace("%", "");
-
-            //    try
-            //    {
-            //        EQStats.Target_HP1 = int.Parse(recognizedText);
-            //    }
-            //    catch
-            //    {
-            //        EQStats.Target_HP1 = -1;
-            //    }
-
-                ///  Party 1
-                ///  
-                EQStats.Target_HP = CaptureScreenLocation(Target1[0], Target1[1], Target1[2], Target1[3]);
-                EQStats.Target_HP1 = CaptureScreenLocation(TargetBox1[0], TargetBox1[1], TargetBox1[2], TargetBox1[3]);
-                EQStats.Target_HP2 = CaptureScreenLocation(TargetBox2[0], TargetBox2[1], TargetBox2[2], TargetBox2[3]);
-                EQStats.Target_HP3 = CaptureScreenLocation(TargetBox3[0], TargetBox3[1], TargetBox3[2], TargetBox3[3]);
-                EQStats.Target_HP4 = CaptureScreenLocation(TargetBox4[0], TargetBox4[1], TargetBox4[2], TargetBox4[3]);
-                EQStats.Target_HP5 = CaptureScreenLocation(TargetBox5[0], TargetBox5[1], TargetBox5[2], TargetBox5[3]);
-                EQStats.Target_HP6 = CaptureScreenLocation(TargetBox6[0], TargetBox6[1], TargetBox6[2], TargetBox6[3]);
-                //// end party 1    
-                EQStats.Party1 = CaptureScreenLocation(Party1[0], Party1[1], Party1[2], Party1[3]);
-                EQStats.Party2 = CaptureScreenLocation(Party2[0], Party2[1], Party2[2], Party2[3]);
-                EQStats.Party3 = CaptureScreenLocation(Party3[0], Party3[1], Party3[2], Party3[3]);
-                EQStats.Party4 = CaptureScreenLocation(Party4[0], Party4[1], Party4[2], Party4[3]);
-                EQStats.Party5 = CaptureScreenLocation(Party5[0], Party5[1], Party5[2], Party5[3]);
+            
                 if (EQStats.MyLevel == 0)
                 {
                     EQStats.MyLevel = CaptureScreenLocation(MyLevel[0], MyLevel[1], MyLevel[2], MyLevel[3]);
@@ -513,8 +531,8 @@ class Program
                 Console.WriteLine($"Party 5: {EQStats.Party5}");
                 Console.WriteLine($"Sitting: {EQStats.Sitting}");
                 Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
-                counter++;
-                Thread.Sleep(100);
+                
+                Thread.Sleep(500);
                 
             }
         });
@@ -558,7 +576,11 @@ class Program
 
         printThread.Start();
         ReadThread.Start();
-
+        Read1.Start();
+        Read2.Start();
+        Read3.Start();
+        
+        
 
 
 
@@ -573,6 +595,9 @@ class Program
         stopPrinting = true; // Set the flag to stop the printing loop
         printThread.Join(); // Wait for the printThread to finish
         ReadThread.Join();
+        Read1.Join(); 
+        Read2.Join(); 
+        Read3.Join(); 
         Console.WriteLine("Printing stopped.");
     }
 }
