@@ -135,7 +135,7 @@ class Program
 
     public static int CaptureScreenLocation(int x1, int y1, int x2, int y2)
     {
-        
+
 
         // Calculate width and height of the rectangle
         int width = Math.Abs(x2 - x1);
@@ -162,8 +162,8 @@ class Program
 
         return returnvalue;
     }
-   
-    
+
+
     public static bool IsMouseButtonPressed(MouseButton button)
     {
         return GetAsyncKeyState((int)button);
@@ -205,7 +205,8 @@ class Program
         public int Party5 { get; set; }
         public int TargetOfTarget { get; set; }
         public int MyLevel { get; set; }
-        public int Sitting { get; set;}
+        public bool Sitting { get; set; }
+        public bool following { get; set; }
 
 
 
@@ -306,10 +307,44 @@ class Program
         ocr.Dispose();
         return text;
     }
+    static void RandomMove()
+    {
+        var ahk = AutoHotkeyEngine.Instance;
+        ahk.ExecRaw("SetKeyDelay, 2");
+        // Create an instance of the Random class
+        Random random = new Random();
 
+        // Generate a random number between 0 and 2 (inclusive)
+        int randomNumber = random.Next(4);
+
+        // Use a switch statement or if-else statements to perform actions based on the random number
+        switch (randomNumber)
+        {
+            case 0:
+                // Action 1
+                ahk.ExecRaw("Send {a down}\r\nSleep 100\r\nSend {a up}");
+                // TODO: Add your code for Action 1 here
+                break;
+            case 1:
+                // Action 2
+                ahk.ExecRaw("Send {d down}\r\nSleep 100\r\nSend {d up}");
+                // TODO: Add your code for Action 2 here
+                break;
+            case 2:
+                // Action 3
+                ahk.ExecRaw("Send {a down}\r\nSleep 100\r\nSend {a up}");
+                // TODO: Add your code for Action 3 here
+                break;
+            case 3:
+                // Action 4
+                ahk.ExecRaw("Send {d down}\r\nSleep 100\r\nSend {d up}");
+                // TODO: Add your code for Action 3 here
+                break;
+        }
+    }
     static void Main()
     {
-        
+
 
 
 
@@ -342,7 +377,7 @@ class Program
         Random random = new Random();
         string filePath2 = @"C:\temp\EQTestFiles\Data.csv";
         List<DataObject> dataObjects = ReadCSVFile(filePath2);
-        
+
         List<DataObject> ActiveCasting = new List<DataObject>(); // keep
         List<DataObject> Sitting = new List<DataObject>(); // keep
 
@@ -352,19 +387,19 @@ class Program
         foreach (DataObject obj in dataObjects)
         {
             Console.WriteLine($"X: {obj.X}, Y: {obj.Y}, Hex: {obj.Hex}, HP: {obj.HP}, Notes: {obj.Notes}, Description: {obj.Description}");
-            
+
             if (obj.Description == "Casting") { ActiveCasting.Add(obj); }
             if (obj.Description == "Sitting") { Sitting.Add(obj); }
 
         }
-       
+
 
         bool stopPrinting = false;
 
         bool OutOfRange = false;
         bool ManaRegen = false;
         bool backup = false;
-        
+
 
         Thread Read1 = new Thread(() =>
         {
@@ -381,7 +416,7 @@ class Program
 
                 Thread.Sleep(500);
             }
-        } );
+        });
 
         Thread Read2 = new Thread(() =>
         {
@@ -397,8 +432,8 @@ class Program
                 Thread.Sleep(500);
             }
         });
-        
-        
+
+
         Thread Read3 = new Thread(() =>
         {
             while (!stopPrinting)
@@ -453,7 +488,7 @@ class Program
                 Thread.Sleep(500);
             }
         });
-        
+
 
 
 
@@ -461,43 +496,43 @@ class Program
 
         Thread printThread = new Thread(() =>
         {
-        while (!stopPrinting)
-        {
+            while (!stopPrinting)
+            {
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 foreach (DataObject obj in ActiveCasting)
-            {
-                Color pixelColor = Input.GetPixelColor(obj.X, obj.Y);
-                string hexColor = Input.ColorToHex(pixelColor);
-                if (hexColor == obj.Hex)
                 {
-                    EQStats.Casting = 1;
-                    
-                }
-                if (hexColor != obj.Hex)
-                {
-                    EQStats.Casting = -1;
-                }
+                    Color pixelColor = Input.GetPixelColor(obj.X, obj.Y);
+                    string hexColor = Input.ColorToHex(pixelColor);
+                    if (hexColor == obj.Hex)
+                    {
+                        EQStats.Casting = 1;
 
-            }
+                    }
+                    if (hexColor != obj.Hex)
+                    {
+                        EQStats.Casting = -1;
+                    }
+
+                }
                 foreach (DataObject obj in Sitting)
                 {
                     Color pixelColor = Input.GetPixelColor(obj.X, obj.Y);
                     string hexColor = Input.ColorToHex(pixelColor);
                     if (hexColor == obj.Hex)
                     {
-                        EQStats.Sitting = 1;
+                        //EQStats.Sitting = -1;  // Combat, recovery etc
 
                     }
                     if (hexColor != obj.Hex)
                     {
-                        EQStats.Sitting = -1;
+                        //EQStats.Sitting = 1;  // sitting removed, would need more stuff to make this logic work
                     }
 
                 }
                 // Get my stats More Complex, cant use the simplified system
 
-            
-            
+
+
                 if (EQStats.MyLevel == 0)
                 {
                     EQStats.MyLevel = CaptureScreenLocation(MyLevel[0], MyLevel[1], MyLevel[2], MyLevel[3]);
@@ -530,10 +565,11 @@ class Program
                 Console.WriteLine($"Party 4: {EQStats.Party4}");
                 Console.WriteLine($"Party 5: {EQStats.Party5}");
                 Console.WriteLine($"Sitting: {EQStats.Sitting}");
+                Console.WriteLine($"following: {EQStats.following}");
                 Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
-                
+
                 Thread.Sleep(500);
-                
+
             }
         });
 
@@ -574,13 +610,143 @@ class Program
 
         });  // This reads the EQ Log
 
+        Thread QueueThread = new Thread(() =>
+        {
+            while (!stopPrinting)
+            {
+                foreach (string Qline in _lineQueue)
+                {
+                    string queueline = "";
+                    bool isRemoved = _lineQueue.TryDequeue(out queueline);
+                    string line = Qline.Substring(27);
+                    if (line.Contains("*WARNING*"))
+                    {
+                        EQStats.Sitting = false;
+                        EQStats.following = true;
+                        continue;
+                    }
+                    if (line.Contains("You are no longer auto-following"))
+                    {
+                        EQStats.Sitting = false;
+                        EQStats.following = false;
+                        continue;
+                    }
+                    if (line.Contains("To Arms!"))
+                    {
+                        RandomMove();
+                        EQStats.Sitting = false;
+                        EQStats.following = false;
+                        
+
+                        continue;
+                    }
+                }
+            }
+        });  // this processes the EQ log
+
+
+
+
+        // Level <- 10 
+        Thread ClericThread = new Thread(() =>
+        {
+            var ahk = AutoHotkeyEngine.Instance;
+            ahk.ExecRaw("SetKeyDelay, 2");
+
+            while (!stopPrinting)
+            {
+                if (EQStats.following)
+                {
+                    EQStats.Sitting = false;
+                    continue; } // Do nothing, just follow
+                else if (EQStats.Casting == 1)  // Step 1, ensure your not casting
+                {
+                    
+                    if (EQStats.Target_HP > 90)
+                    {
+                        ahk.ExecRaw("SendEvent,x");
+                        Thread.Sleep(50);
+                        ahk.ExecRaw("SendEvent,x");
+                    }
+                    EQStats.Sitting = false;
+                    continue;
+                }
+                // healing block
+                else if (EQStats.My_HP < 90 && EQStats.My_HP != -1)
+                {
+                    EQStats.Sitting = false;
+                    ahk.ExecRaw("SendEvent,{F1}");
+                    Thread.Sleep(20);
+                    ahk.ExecRaw("SendEvent,1");
+                }
+                else if(EQStats.Party1 < 90 && EQStats.Party1 != -1)
+                {
+                    EQStats.Sitting = false;
+                    ahk.ExecRaw("SendEvent,{F2}");
+                    Thread.Sleep(20);
+                    ahk.ExecRaw("SendEvent,1");
+                }
+                else if(EQStats.Party2 < 90 && EQStats.Party2 != -1)
+                {
+                    EQStats.Sitting = false;
+                    ahk.ExecRaw("SendEvent,{F3}");
+                    Thread.Sleep(20);
+                    ahk.ExecRaw("SendEvent,1");
+                }
+                else if(EQStats.Party3 < 90 && EQStats.Party3 != -1)
+                {
+                    EQStats.Sitting = false;
+                    ahk.ExecRaw("SendEvent,{F4}");
+                    Thread.Sleep(20);
+                    ahk.ExecRaw("SendEvent,1");
+                }
+                else if(EQStats.Party4 < 90 && EQStats.Party4 != -1)
+                {
+                    EQStats.Sitting = false;
+                    ahk.ExecRaw("SendEvent,{F5}");
+                    Thread.Sleep(20);
+                    ahk.ExecRaw("SendEvent,1");
+                }
+                else if(EQStats.Party5 < 90 && EQStats.Party5 != -1)
+                {
+                    EQStats.Sitting = false;
+                    ahk.ExecRaw("SendEvent,{F6}");
+                    Thread.Sleep(20);
+                    ahk.ExecRaw("SendEvent,1");
+                }
+                else if (EQStats.Sitting == false)
+                {
+                    Thread.Sleep(500);
+                    EQStats.Sitting = true;
+                    ahk.ExecRaw("SendEvent,-");
+                }
+
+                Thread.Sleep(250);
+            }
+
+        });
+
+        Thread NecroThread = new Thread(() =>
+        {
+            while (!stopPrinting)
+            {
+
+
+
+
+            }
+
+        });
+
+
+
         printThread.Start();
         ReadThread.Start();
         Read1.Start();
         Read2.Start();
         Read3.Start();
-        
-        
+        ClericThread.Start();
+        QueueThread.Start();
 
 
 
@@ -598,6 +764,8 @@ class Program
         Read1.Join(); 
         Read2.Join(); 
         Read3.Join(); 
+        ClericThread.Join();
+        QueueThread.Join();
         Console.WriteLine("Printing stopped.");
     }
 }
