@@ -78,29 +78,34 @@ class Program
 
 
     }
+    
 
+    
 
-    public static int RateOfChange(int[] Values)
+    public static string GetCurrentFValue(int Number)
     {
-        if (Values.Length < 10)
-        { return 0; }
-        int TotalTime = 5;
-        int SampleTime = TotalTime / Values.Length;
-        int SumRateOfChange = 0;
-        for (int i = 0; i < 9; i++)
+        switch (Number)
         {
-            int rateofchange = (Values[i + 1] - Values[i] / SampleTime);
-            SumRateOfChange += rateofchange;
+            case 0:
+                return "{F1}";
 
+            case 1:
+                return "{F2}";
+
+            case 2:
+                return "{F3}";
+
+            case 3:
+                return "{F4}";
+
+            case 4:
+                return "{F5}";
+
+            case 5:
+                return "{F6}";
         }
-        int AvgRate = SumRateOfChange / 9;
-
-
-
-        return AvgRate;
+        return "{F1}";
     }
-
-
     static void PrintNewLines()
     {
         // Open the log file
@@ -163,7 +168,7 @@ class Program
         return returnvalue;
     }
 
-
+    
     public static bool IsMouseButtonPressed(MouseButton button)
     {
         return GetAsyncKeyState((int)button);
@@ -207,7 +212,8 @@ class Program
         public int MyLevel { get; set; }
         public bool Sitting { get; set; }
         public bool following { get; set; }
-
+        public bool Combat { get; set; }
+        public bool Recovery { get; set; }
 
 
 
@@ -322,7 +328,7 @@ class Program
         {
             case 0:
                 // Action 1
-                ahk.ExecRaw("Send {a down}\r\nSleep 100\r\nSend {a up}");
+                ahk.ExecRaw("Send {s down}\r\nSleep 100\r\nSend {s up}");
                 // TODO: Add your code for Action 1 here
                 break;
             case 1:
@@ -332,7 +338,7 @@ class Program
                 break;
             case 2:
                 // Action 3
-                ahk.ExecRaw("Send {a down}\r\nSleep 100\r\nSend {a up}");
+                ahk.ExecRaw("Send {s down}\r\nSleep 100\r\nSend {s up}");
                 // TODO: Add your code for Action 3 here
                 break;
             case 3:
@@ -357,6 +363,9 @@ class Program
         bool AutoTarget = false;
         bool AutoSit = false;
         bool Auction = false;
+        bool buffing = true;
+        Queue<string> notFoundImages = new Queue<string>();
+        string CurrentBuffTarget = null;
 
         List<int> Target1 = new List<int> { 1387, 386, 1413, 398 };
         List<int> HpStaMp = new List<int> { 1638, 408, 1676, 473 };
@@ -373,13 +382,17 @@ class Program
         List<int> TargetBox4 = new List<int> { 1429, 616, 1454, 633 };
         List<int> TargetBox5 = new List<int> { 1429, 649, 1454, 666 };
         List<int> TargetBox6 = new List<int> { 1429, 682, 1454, 697 };
+        List<int> BuffBox = new List<int> { 1285, 395, 1523, 465 };
 
         Random random = new Random();
         string filePath2 = @"C:\temp\EQTestFiles\Data.csv";
         List<DataObject> dataObjects = ReadCSVFile(filePath2);
 
         List<DataObject> ActiveCasting = new List<DataObject>(); // keep
-        List<DataObject> Sitting = new List<DataObject>(); // keep
+        //List<DataObject> Sitting = new List<DataObject>();
+        //List<DataObject> Standing = new List<DataObject>();
+        //List<DataObject> Recovery = new List<DataObject>();// keep
+        //List<DataObject> Combat = new List<DataObject>();
 
         Stats EQStats = new Stats();
         // Read in the Data File
@@ -389,8 +402,10 @@ class Program
             Console.WriteLine($"X: {obj.X}, Y: {obj.Y}, Hex: {obj.Hex}, HP: {obj.HP}, Notes: {obj.Notes}, Description: {obj.Description}");
 
             if (obj.Description == "Casting") { ActiveCasting.Add(obj); }
-            if (obj.Description == "Sitting") { Sitting.Add(obj); }
-
+            //if (obj.Description == "Sitting") { Sitting.Add(obj); }
+            //if (obj.Description == "Recovery") { Sitting.Add(obj); }
+            //if (obj.Description == "Standing") { Sitting.Add(obj); }
+            //if (obj.Description == "Combat") { Sitting.Add(obj); }
         }
 
 
@@ -489,264 +504,363 @@ class Program
             }
         });
 
+        
 
 
 
 
 
-        Thread printThread = new Thread(() =>
-        {
-            while (!stopPrinting)
+            Thread printThread = new Thread(() =>
             {
-                var watch = System.Diagnostics.Stopwatch.StartNew();
-                foreach (DataObject obj in ActiveCasting)
+                while (!stopPrinting)
                 {
-                    Color pixelColor = Input.GetPixelColor(obj.X, obj.Y);
-                    string hexColor = Input.ColorToHex(pixelColor);
-                    if (hexColor == obj.Hex)
+                    var watch = System.Diagnostics.Stopwatch.StartNew();
+                    foreach (DataObject obj in ActiveCasting)
                     {
-                        EQStats.Casting = 1;
-
-                    }
-                    if (hexColor != obj.Hex)
-                    {
-                        EQStats.Casting = -1;
-                    }
-
-                }
-                foreach (DataObject obj in Sitting)
-                {
-                    Color pixelColor = Input.GetPixelColor(obj.X, obj.Y);
-                    string hexColor = Input.ColorToHex(pixelColor);
-                    if (hexColor == obj.Hex)
-                    {
-                        //EQStats.Sitting = -1;  // Combat, recovery etc
-
-                    }
-                    if (hexColor != obj.Hex)
-                    {
-                        //EQStats.Sitting = 1;  // sitting removed, would need more stuff to make this logic work
-                    }
-
-                }
-                // Get my stats More Complex, cant use the simplified system
-
-
-
-                if (EQStats.MyLevel == 0)
-                {
-                    EQStats.MyLevel = CaptureScreenLocation(MyLevel[0], MyLevel[1], MyLevel[2], MyLevel[3]);
-                }
-                //EQStats.TargetOfTarget = CaptureScreenLocation(TargetOfTarget[0], TargetOfTarget[1], TargetOfTarget[2], TargetOfTarget[3]);
-                // compress the above to a single line
-                ////////////////////////   Add new screen reading code here!!! ////////////////////////////
-
-
-                ////////////////////////   End Screen Reading Code ////////////////////////////////////////
-                ///
-
-                watch.Stop();
-                Console.Clear();
-                Console.WriteLine($"Target_HP: {EQStats.Target_HP}");
-                Console.WriteLine($"Target of Target: {EQStats.TargetOfTarget}");
-                Console.WriteLine($"Target_HP1: {EQStats.Target_HP1}");
-                Console.WriteLine($"Target_HP2: {EQStats.Target_HP2}");
-                Console.WriteLine($"Target_HP3: {EQStats.Target_HP3}");
-                Console.WriteLine($"Target_HP4: {EQStats.Target_HP4}");
-                Console.WriteLine($"Target_HP5: {EQStats.Target_HP5}");
-                Console.WriteLine($"Target_HP6: {EQStats.Target_HP6}");
-                Console.WriteLine($"My_HP: {EQStats.My_HP}");
-                Console.WriteLine($"My_MP: {EQStats.My_MP}");
-                Console.WriteLine($"My Level: {EQStats.MyLevel}");
-                Console.WriteLine($"Casting: {EQStats.Casting}");
-                Console.WriteLine($"Party 1: {EQStats.Party1}");
-                Console.WriteLine($"Party 2: {EQStats.Party2}");
-                Console.WriteLine($"Party 3: {EQStats.Party3}");
-                Console.WriteLine($"Party 4: {EQStats.Party4}");
-                Console.WriteLine($"Party 5: {EQStats.Party5}");
-                Console.WriteLine($"Sitting: {EQStats.Sitting}");
-                Console.WriteLine($"following: {EQStats.following}");
-                Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
-
-                Thread.Sleep(500);
-
-            }
-        });
-
-
-        Thread ReadThread = new Thread(() =>
-        {
-            while (!stopPrinting)
-            {
-                // Print out the current contents of the file
-                PrintNewLines();
-
-
-                // Create a new FileSystemWatcher object to monitor the log file
-                using (var watcher = new FileSystemWatcher(Path.GetDirectoryName(_filePath), Path.GetFileName(_filePath)))
-                {
-                    // Set the notification filter to watch for changes in LastWrite time
-                    watcher.NotifyFilter = NotifyFilters.LastWrite;
-
-                    // Start watching for changes
-                    watcher.EnableRaisingEvents = true;
-
-                    // Loop indefinitely
-                    while (true)
-                    {
-                        // Wait for a change notification
-                        var result = watcher.WaitForChanged(WatcherChangeTypes.Changed);
-
-                        // Check if the file was changed
-                        if (result.ChangeType == WatcherChangeTypes.Changed)
+                        Color pixelColor = Input.GetPixelColor(obj.X, obj.Y);
+                        string hexColor = Input.ColorToHex(pixelColor);
+                        if (hexColor == obj.Hex)
                         {
-                            // Print out the new lines that were added to the file
-                            PrintNewLines();
+                            EQStats.Casting = 1;
+
+                        }
+                        if (hexColor != obj.Hex)
+                        {
+                            EQStats.Casting = -1;
+                        }
+
+                    }
+                    
+
+
+
+                    if (EQStats.MyLevel == 0)
+                    {
+                        EQStats.MyLevel = CaptureScreenLocation(MyLevel[0], MyLevel[1], MyLevel[2], MyLevel[3]);
+                    }
+                    //EQStats.TargetOfTarget = CaptureScreenLocation(TargetOfTarget[0], TargetOfTarget[1], TargetOfTarget[2], TargetOfTarget[3]);
+                    // compress the above to a single line
+                    ////////////////////////   Add new screen reading code here!!! ////////////////////////////
+
+
+                    ////////////////////////   End Screen Reading Code ////////////////////////////////////////
+                    ///
+
+                    watch.Stop();
+                    Console.Clear();
+                    Console.WriteLine($"Target_HP: {EQStats.Target_HP}");
+                    Console.WriteLine($"Target of Target: {EQStats.TargetOfTarget}");
+                    Console.WriteLine($"Target_HP1: {EQStats.Target_HP1}");
+                    Console.WriteLine($"Target_HP2: {EQStats.Target_HP2}");
+                    Console.WriteLine($"Target_HP3: {EQStats.Target_HP3}");
+                    Console.WriteLine($"Target_HP4: {EQStats.Target_HP4}");
+                    Console.WriteLine($"Target_HP5: {EQStats.Target_HP5}");
+                    Console.WriteLine($"Target_HP6: {EQStats.Target_HP6}");
+                    Console.WriteLine($"My_HP: {EQStats.My_HP}");
+                    Console.WriteLine($"My_MP: {EQStats.My_MP}");
+                    Console.WriteLine($"My Level: {EQStats.MyLevel}");
+                    Console.WriteLine($"Casting: {EQStats.Casting}");
+                    Console.WriteLine($"Party 1: {EQStats.Party1}");
+                    Console.WriteLine($"Party 2: {EQStats.Party2}");
+                    Console.WriteLine($"Party 3: {EQStats.Party3}");
+                    Console.WriteLine($"Party 4: {EQStats.Party4}");
+                    Console.WriteLine($"Party 5: {EQStats.Party5}");
+                    Console.WriteLine($"Sitting: {EQStats.Sitting}");
+                    Console.WriteLine($"following: {EQStats.following}");
+                    Console.WriteLine($"buffing?: {buffing}");
+                    Console.WriteLine($"Combat: {EQStats.Combat}");
+                    Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
+                    if (notFoundImages.Count > 0)
+                    {
+                        Console.WriteLine($"Not Found Buffs:" + notFoundImages.Peek());
+                    }
+
+                    Thread.Sleep(500);
+
+                }
+            });
+
+
+            Thread ReadThread = new Thread(() =>
+            {
+                while (!stopPrinting)
+                {
+                    // Print out the current contents of the file
+                    PrintNewLines();
+
+
+                    // Create a new FileSystemWatcher object to monitor the log file
+                    using (var watcher = new FileSystemWatcher(Path.GetDirectoryName(_filePath), Path.GetFileName(_filePath)))
+                    {
+                        // Set the notification filter to watch for changes in LastWrite time
+                        watcher.NotifyFilter = NotifyFilters.LastWrite;
+
+                        // Start watching for changes
+                        watcher.EnableRaisingEvents = true;
+
+                        // Loop indefinitely
+                        while (true)
+                        {
+                            // Wait for a change notification
+                            var result = watcher.WaitForChanged(WatcherChangeTypes.Changed);
+
+                            // Check if the file was changed
+                            if (result.ChangeType == WatcherChangeTypes.Changed)
+                            {
+                                // Print out the new lines that were added to the file
+                                PrintNewLines();
+                            }
+                        }
+                    }
+
+                }
+
+            });  // This reads the EQ Log
+
+            Thread QueueThread = new Thread(() =>
+            {
+                while (!stopPrinting)
+                {
+                    foreach (string Qline in _lineQueue)
+                    {
+                        string queueline = "";
+                        bool isRemoved = _lineQueue.TryDequeue(out queueline);
+                        string line = Qline.Substring(27);
+                        if (line.Contains("*WARNING*"))
+                        {
+                            EQStats.Sitting = false;
+                            EQStats.following = true;
+                            
+                            continue;
+                        }
+                        if (line.Contains("You are no longer auto-following"))
+                        {
+                            EQStats.Sitting = false;
+                            EQStats.following = false;
+                            continue;
+                        }
+                        if (line.Contains("To Arms!"))
+                        {
+                            RandomMove();
+                            EQStats.Sitting = false;
+                            EQStats.following = false;
+                            
+
+
+                            continue;
+                        }
+                        if (line.Contains("Time For Buffs"))
+                        {
+                            RandomMove();
+
+                            buffing = true;
+
+                            continue;
+                        }
+                        if (line.Contains("No Buffs"))
+                        {
+                            RandomMove();
+
+                            buffing = false;
+
+                            continue;
                         }
                     }
                 }
+            });  // this processes the EQ log
 
-            }
 
-        });  // This reads the EQ Log
 
-        Thread QueueThread = new Thread(() =>
-        {
-            while (!stopPrinting)
+
+            // Level <- 10 
+            Thread ClericThread = new Thread(() =>
             {
-                foreach (string Qline in _lineQueue)
+                var ahk = AutoHotkeyEngine.Instance;
+                ahk.ExecRaw("SetKeyDelay, 2");
+
+                string directoryPath = "C:\\EQItems\\Cleric Buffs"; // Specify the directory path containing images
+                Dictionary<string, Image<Bgr, byte>> images = new Dictionary<string, Image<Bgr, byte>>();
+
+                // Check if the directory exists
+                if (!Directory.Exists(directoryPath))
                 {
-                    string queueline = "";
-                    bool isRemoved = _lineQueue.TryDequeue(out queueline);
-                    string line = Qline.Substring(27);
-                    if (line.Contains("*WARNING*"))
+                    Console.WriteLine("Directory does not exist.");
+                }
+                string[] imagePaths = Directory.GetFiles(directoryPath, "*.jpg"); // Change the file extension as needed
+
+                foreach (string imagePath in imagePaths)  
+                {
+                    string imageName = Path.GetFileNameWithoutExtension(imagePath);
+                    Image<Bgr, byte> image = new Image<Bgr, byte>(imagePath);
+                    images.Add(imageName, image);
+                }
+                // above section loads the cleric images into memory in images dictionary
+
+
+                while (!stopPrinting)
+                {
+                    List<int> PartyHP = new List<int>() { EQStats.My_HP, EQStats.Party1, EQStats.Party2, EQStats.Party3, EQStats.Party4, EQStats.Party5 };
+                    if (EQStats.following)
                     {
                         EQStats.Sitting = false;
-                        EQStats.following = true;
                         continue;
-                    }
-                    if (line.Contains("You are no longer auto-following"))
+                    } // Do nothing, just follow
+                    else if (EQStats.Casting == 1)  // Step 1, ensure your not casting
                     {
+
                         EQStats.Sitting = false;
-                        EQStats.following = false;
+
+                        if (EQStats.Target_HP == 100)
+                        {
+                            ahk.ExecRaw("SendEvent,x");
+                            Thread.Sleep(20);
+                            ahk.ExecRaw("SendEvent,x");
+                        }
+                        Thread.Sleep(200);
                         continue;
                     }
-                    if (line.Contains("To Arms!"))
+                    // healing block
+
+                    for (int i = 0; i < 5; i++)  // scan each party members HP
                     {
-                        RandomMove();
-                        EQStats.Sitting = false;
-                        EQStats.following = false;
-                        
+                        if (PartyHP[i] < 70 && PartyHP[i] != 0 && PartyHP[i]! > 90 && PartyHP[i] != 100)  // top off lightly hurt people when you have mana
+                        {
+                            string Fcode = GetCurrentFValue(i);
 
-                        continue;
+                            EQStats.Casting = 1;
+                            EQStats.Sitting = false;
+                            ahk.ExecRaw("SendEvent," + Fcode);
+                            Thread.Sleep(20);
+                            ahk.ExecRaw("SendEvent,2");
+                            break;
+
+                        }
+                        if (PartyHP[i] < 90 && PartyHP[i] > 0 && EQStats.My_MP > 90)
+                        {
+                            string Fcode = GetCurrentFValue(i);
+
+                            EQStats.Casting = 1;
+                            EQStats.Sitting = false;
+                            ahk.ExecRaw("SendEvent,+" + Fcode);
+                            Thread.Sleep(20);
+                            ahk.ExecRaw("SendEvent,1");
+                            break;
+
+                        }
+
                     }
-                }
-            }
-        });  // this processes the EQ log
 
-
-
-
-        // Level <- 10 
-        Thread ClericThread = new Thread(() =>
-        {
-            var ahk = AutoHotkeyEngine.Instance;
-            ahk.ExecRaw("SetKeyDelay, 2");
-
-            while (!stopPrinting)
-            {
-                if (EQStats.following)
-                {
-                    EQStats.Sitting = false;
-                    continue; } // Do nothing, just follow
-                else if (EQStats.Casting == 1)  // Step 1, ensure your not casting
-                {
-                    
-                    if (EQStats.Target_HP > 90)
+                    if (EQStats.Sitting == false && EQStats.Casting == -1)
                     {
-                        ahk.ExecRaw("SendEvent,x");
-                        Thread.Sleep(50);
-                        ahk.ExecRaw("SendEvent,x");
+                        Thread.Sleep(500);
+                        EQStats.Sitting = true;
+                        ahk.ExecRaw("SendEvent,-");
                     }
-                    EQStats.Sitting = false;
-                    continue;
-                }
-                // healing block
-                else if (EQStats.My_HP < 90 && EQStats.My_HP != -1)
-                {
-                    EQStats.Sitting = false;
-                    ahk.ExecRaw("SendEvent,{F1}");
-                    Thread.Sleep(20);
-                    ahk.ExecRaw("SendEvent,1");
-                }
-                else if(EQStats.Party1 < 90 && EQStats.Party1 != -1)
-                {
-                    EQStats.Sitting = false;
-                    ahk.ExecRaw("SendEvent,{F2}");
-                    Thread.Sleep(20);
-                    ahk.ExecRaw("SendEvent,1");
-                }
-                else if(EQStats.Party2 < 90 && EQStats.Party2 != -1)
-                {
-                    EQStats.Sitting = false;
-                    ahk.ExecRaw("SendEvent,{F3}");
-                    Thread.Sleep(20);
-                    ahk.ExecRaw("SendEvent,1");
-                }
-                else if(EQStats.Party3 < 90 && EQStats.Party3 != -1)
-                {
-                    EQStats.Sitting = false;
-                    ahk.ExecRaw("SendEvent,{F4}");
-                    Thread.Sleep(20);
-                    ahk.ExecRaw("SendEvent,1");
-                }
-                else if(EQStats.Party4 < 90 && EQStats.Party4 != -1)
-                {
-                    EQStats.Sitting = false;
-                    ahk.ExecRaw("SendEvent,{F5}");
-                    Thread.Sleep(20);
-                    ahk.ExecRaw("SendEvent,1");
-                }
-                else if(EQStats.Party5 < 90 && EQStats.Party5 != -1)
-                {
-                    EQStats.Sitting = false;
-                    ahk.ExecRaw("SendEvent,{F6}");
-                    Thread.Sleep(20);
-                    ahk.ExecRaw("SendEvent,1");
-                }
-                else if (EQStats.Sitting == false)
-                {
                     Thread.Sleep(500);
-                    EQStats.Sitting = true;
-                    ahk.ExecRaw("SendEvent,-");
+                    if (buffing == true)
+                    {
+                        for (int i = 0; i < 5; i++)
+                        {
+                            if (PartyHP[i] != -1 && PartyHP[i] != 0)
+                            {
+                                string Fcode = GetCurrentFValue(i);
+                                ahk.ExecRaw("SendEvent,{Esc}");
+                                Thread.Sleep(500);
+                                ahk.ExecRaw("SendEvent," + Fcode);
+                                Thread.Sleep(1000);
+
+                                int x1 = BuffBox[0]; // x-coordinate of top-left corner
+                                int y1 = BuffBox[1]; // y-coordinate of top-left corner
+                                int x2 = BuffBox[2]; // x-coordinate of bottom-right corner
+                                int y2 = BuffBox[3];
+
+                                int width = Math.Abs(x2 - x1);
+                                int height = Math.Abs(y2 - y1);
+
+                                Bitmap screenCapture = CaptureScreenRegion(x1, y1, width, height);
+                                Image<Bgr, byte> emguImage = screenCapture.ToImage<Bgr, byte>();
+
+                                foreach (var kvp in images) // run through all the images
+                                {
+                                    string ImageName = kvp.Key;
+                                    Image<Bgr, byte> image = kvp.Value;
+
+                                    using (Image<Gray, float> result = emguImage.MatchTemplate(image, Emgu.CV.CvEnum.TemplateMatchingType.CcoeffNormed))
+                                    {
+                                        double[] minValues, maxValues;
+                                        Point[] minLocations, maxLocations;
+                                        result.MinMax(out minValues, out maxValues, out minLocations, out maxLocations);
+
+                                        // Check if the similarity score is above a certain threshold
+                                        double threshold = 0.8; // You can adjust this threshold as needed
+                                        if (maxValues[0] > threshold)
+                                        {
+                                            Console.WriteLine("The smaller image is contained in the larger image.");
+                                            continue;
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine("The smaller image is not contained in the larger image.");
+                                            if (ImageName == "Armor")
+                                            {
+                                                EQStats.Sitting = false;
+                                                Console.WriteLine("Needs Armor Spell");
+                                                ahk.ExecRaw("SendEvent,6");
+                                                Thread.Sleep(4500);
+                                            }
+                                            if (ImageName == "Symbol")
+                                            {
+                                                EQStats.Sitting = false;
+                                                Console.WriteLine("Needs Symbol Spell");
+                                                ahk.ExecRaw("SendEvent,5");
+                                                Thread.Sleep(4500);
+                                            }
+                                            if (ImageName == "HPACBuff")
+                                            {
+                                                EQStats.Sitting = false;
+                                                Console.WriteLine("Needs HPACBuff Spell");
+                                                ahk.ExecRaw("SendEvent,4");
+                                                Thread.Sleep(3500);
+                                            }
+                                        }
+
+                                    }
+
+                                }
+
+
+
+                            }
+
+                        }
+                        buffing = false;
+
+                    }
+                }
+                
+            });
+
+            Thread NecroThread = new Thread(() =>
+            {
+                while (!stopPrinting)
+                {
+
+
+
+
                 }
 
-                Thread.Sleep(250);
-            }
-
-        });
-
-        Thread NecroThread = new Thread(() =>
-        {
-            while (!stopPrinting)
-            {
+            });
 
 
 
-
-            }
-
-        });
-
-
-
-        printThread.Start();
-        ReadThread.Start();
-        Read1.Start();
-        Read2.Start();
-        Read3.Start();
-        ClericThread.Start();
-        QueueThread.Start();
+            printThread.Start();
+            ReadThread.Start();
+            Read1.Start();
+            Read2.Start();
+            Read3.Start();
+            ClericThread.Start();
+            QueueThread.Start();
 
 
 
@@ -755,17 +869,18 @@ class Program
 
 
 
-        // Wait for the user to press Enter to stop printing
-        Console.ReadLine();
+            // Wait for the user to press Enter to stop printing
+            Console.ReadLine();
 
-        stopPrinting = true; // Set the flag to stop the printing loop
-        printThread.Join(); // Wait for the printThread to finish
-        ReadThread.Join();
-        Read1.Join(); 
-        Read2.Join(); 
-        Read3.Join(); 
-        ClericThread.Join();
-        QueueThread.Join();
-        Console.WriteLine("Printing stopped.");
+            stopPrinting = true; // Set the flag to stop the printing loop
+            printThread.Join(); // Wait for the printThread to finish
+            ReadThread.Join();
+            Read1.Join();
+            Read2.Join();
+            Read3.Join();
+            ClericThread.Join();
+            QueueThread.Join();
+            Console.WriteLine("Printing stopped.");
+        }
     }
-}
+
