@@ -363,7 +363,7 @@ class Program
         bool AutoTarget = false;
         bool AutoSit = false;
         bool Auction = false;
-        bool buffing = true;
+        bool buffing = false;
         Queue<string> notFoundImages = new Queue<string>();
         string CurrentBuffTarget = null;
 
@@ -637,6 +637,7 @@ class Program
                         {
                             EQStats.Sitting = false;
                             EQStats.following = false;
+                            Thread.Sleep(200);
                             continue;
                         }
                         if (line.Contains("To Arms!"))
@@ -644,7 +645,7 @@ class Program
                             RandomMove();
                             EQStats.Sitting = false;
                             EQStats.following = false;
-                            
+                            Thread.Sleep(200);
 
 
                             continue;
